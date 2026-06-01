@@ -1,0 +1,6 @@
+{
+  "name": "Echoes",
+  "description": "A beautiful stream player featuring Apple Music-style dynamic glassmorphic player overlays, color extraction, backup restores, and Sleep Timers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
