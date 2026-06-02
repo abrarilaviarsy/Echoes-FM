@@ -1,4 +1,4 @@
-name: Android CI Build
+name: Android Release Build
 
 on:
   push:
@@ -24,17 +24,15 @@ jobs:
       with:
         gradle-version: 9.3.1
 
-    - name: Generate Debug Keystore
+    - name: Generate Official Release Keystore
       run: |
-        mkdir -p ~/.android
-        keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-        cp ~/.android/debug.keystore ./debug.keystore
+        keytool -genkey -v -keystore release.keystore -storepass echoes2026 -alias echoesrelease -keypass echoes2026 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Abrari Laviarsy,O=Echoes FM,L=Jakarta,C=ID"
 
-    - name: Build APK with Gradle
-      run: gradle assembleDebug
+    - name: Build and Sign Optimized Release APK
+      run: gradle assembleRelease -Pandroid.injected.signing.store.file=${{ github.workspace }}/release.keystore -Pandroid.injected.signing.store.password=echoes2026 -Pandroid.injected.signing.key.alias=echoesrelease -Pandroid.injected.signing.key.password=echoes2026
 
-    - name: Upload Compiled APK
+    - name: Upload Release Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Echoes-App-Build
-        path: app/build/outputs/apk/debug/*.apk
+        name: Echoes-App-Release-Final
+        path: app/build/outputs/apk/release/*.apk

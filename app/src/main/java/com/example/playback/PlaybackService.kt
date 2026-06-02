@@ -70,6 +70,7 @@ class PlaybackService : MediaSessionService() {
         val exoPlayer = ExoPlayer.Builder(this)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(this))
             .setAudioAttributes(audioAttributes, true)
+            .setHandleAudioBecomingNoisy(true)
             .build()
         
         // Add Player error listener and metadata listener
