@@ -5,6 +5,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,8 +34,16 @@ jobs:
     - name: Build and Sign Optimized Release APK
       run: gradle assembleRelease -Pandroid.injected.signing.store.file=${{ github.workspace }}/release.keystore -Pandroid.injected.signing.store.password=echoes2026 -Pandroid.injected.signing.key.alias=echoesrelease -Pandroid.injected.signing.key.password=echoes2026
 
-    - name: Upload Release Artifact
+    - name: Upload Release Artifact (Zip Backup)
       uses: actions/upload-artifact@v4
       with:
         name: Echoes-App-Release-Final
         path: app/build/outputs/apk/release/*.apk
+
+    - name: Create GitHub Release and Upload APK
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: "v1.0.${{ github.run_number }}"
+        name: "Echoes FM Release v1.0.${{ github.run_number }}"
+        body: "Auto-generated release build. Ready to install."
+        files: app/build/outputs/apk/release/*.apk
