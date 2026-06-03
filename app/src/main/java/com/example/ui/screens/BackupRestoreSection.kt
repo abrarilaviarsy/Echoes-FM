@@ -82,7 +82,7 @@ fun BackupRestoreSection(
                 onClick = { backupLauncher.launch("RadioApp_Backup.json") },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD0BCFF), contentColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Public
@@ -48,7 +49,7 @@ fun FmStreamSearchScreen(
     modifier: Modifier = Modifier
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-    var dropdownExpanded by remember { mutableStateOf(false) }
+    var showCountrySheet by remember { mutableStateOf(false) }
 
     val countries = listOf(
         "Argentina", "Australia", "Austria", "Belgium", "Brazil", "Canada", "Chile", "China",
@@ -105,47 +106,18 @@ fun FmStreamSearchScreen(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Box {
-                IconButton(
-                    onClick = { dropdownExpanded = true },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .testTag("fm_country_dropdown_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Public,
-                        contentDescription = "Select Country",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false },
-                    modifier = Modifier
-                        .heightIn(max = 400.dp)
-                        .width(220.dp)
-                        .background(Color(0xFF1A1A1A))
-                        .testTag("fm_country_dropdown_menu")
-                ) {
-                    countries.forEach { country ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = country,
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            },
-                            onClick = {
-                                dropdownExpanded = false
-                                onSearchQueryChange(country)
-                                onSearchTriggered(country)
-                            }
-                        )
-                    }
-                }
+            IconButton(
+                onClick = { showCountrySheet = true },
+                modifier = Modifier
+                    .size(48.dp)
+                    .testTag("fm_country_dropdown_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Public,
+                    contentDescription = "Select Country",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
             }
         }
 
@@ -378,6 +350,164 @@ fun FmStreamSearchScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                         )
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showCountrySheet) {
+        FmStreamCountrySheet(
+            countries = countries,
+            onCountrySelected = { country ->
+                showCountrySheet = false
+                onSearchQueryChange(country)
+                onSearchTriggered(country)
+            },
+            onDismissRequest = { showCountrySheet = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FmStreamCountrySheet(
+    countries: List<String>,
+    onCountrySelected: (String) -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCountries = remember(countries, searchQuery) {
+        countries.filter { it.contains(searchQuery, ignoreCase = true) }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        containerColor = Color.Transparent,
+        tonalElevation = 0.dp,
+        scrimColor = Color.Black.copy(alpha = 0.8f),
+        dragHandle = null
+    ) {
+        Surface(
+            color = Color(0xFF121212),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            ) {
+                // Drag handle
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 16.dp, bottom = 16.dp)
+                        .size(width = 40.dp, height = 4.dp)
+                        .background(Color.DarkGray, RoundedCornerShape(50.dp))
+                )
+
+                // Header title
+                Text(
+                    text = "Browse Stations by Country",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = {
+                        Text(
+                            text = "Search country...",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search Country"
+                        )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(50),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f),
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = Color(0xFF131313),
+                        unfocusedContainerColor = Color(0xFF090909)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .testTag("fm_country_search_field")
+                )
+
+                if (filteredCountries.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.5f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No matching countries found.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.6f)
+                            .testTag("fm_country_list_lazy_column"),
+                        contentPadding = PaddingValues(bottom = 24.dp)
+                    ) {
+                        items(filteredCountries) { country ->
+                            Card(
+                                onClick = {
+                                    onCountrySelected(country)
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF1E1E1E)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("fm_country_row_$country")
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = "Country location",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Text(
+                                        text = country,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
                                 }
                             }
                         }
