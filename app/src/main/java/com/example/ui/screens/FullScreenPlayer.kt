@@ -811,7 +811,7 @@ fun FullScreenPlayer(
                     )
 
                     Text(
-                        text = "Open Song In...",
+                        text = "Search Song In...",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
