@@ -27,16 +27,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.animation.core.Animatable
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -76,31 +68,6 @@ fun MainScreen(
     }
     var currentView by remember { mutableStateOf("main") }
     var showFullScreenPlayer by remember { mutableStateOf(false) }
-
-    val coroutineScope = rememberCoroutineScope()
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeightPx = remember(configuration, density) {
-        with(density) { configuration.screenHeightDp.dp.toPx() }
-    }
-    val barHeightPx = remember(density) {
-        with(density) { 72.dp.toPx() }
-    }
-    val dragOffsetY = remember { Animatable(screenHeightPx) }
-    var isDraggingPlayer by remember { mutableStateOf(false) }
-
-    LaunchedEffect(screenHeightPx) {
-        if (!showFullScreenPlayer && !isDraggingPlayer) {
-            dragOffsetY.snapTo(screenHeightPx)
-        }
-    }
-
-    LaunchedEffect(showFullScreenPlayer, screenHeightPx) {
-        if (!isDraggingPlayer) {
-            val target = if (showFullScreenPlayer) 0f else screenHeightPx
-            dragOffsetY.animateTo(target, animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing))
-        }
-    }
     var showCustomUrlDialog by remember { mutableStateOf(false) }
     var showBackupRestoreDialog by remember { mutableStateOf(false) }
     var customUrlInput by remember { mutableStateOf("") }
@@ -147,12 +114,7 @@ fun MainScreen(
     }
 
     BackHandler(enabled = showFullScreenPlayer) {
-        coroutineScope.launch {
-            isDraggingPlayer = true
-            dragOffsetY.animateTo(screenHeightPx, animationSpec = tween(400, easing = FastOutSlowInEasing))
-            showFullScreenPlayer = false
-            isDraggingPlayer = false
-        }
+        showFullScreenPlayer = false
     }
 
     BackHandler(enabled = currentView == "liked_songs") {
@@ -310,7 +272,7 @@ fun MainScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Brush.verticalGradient(colors = listOf(Color(0xFF1E1026), Color(0xFF0D0614), Color.Black), startY = 0f, endY = 800f))
+                            .background(Brush.verticalGradient(colors = listOf(Color(0xFF1E1026), Color(0xFF0A050D), Color.Black), startY = 0f, endY = 900f))
                             .padding(
                                 top = 0.dp,
                                 bottom = innerPadding.calculateBottomPadding()
@@ -513,7 +475,7 @@ fun MainScreen(
 
                         // Floating MiniPlayer overlay sitting beautifully transparent without any black clipping
                         AnimatedVisibility(
-                            visible = (!showFullScreenPlayer || isDraggingPlayer) && (nowPlaying != null || currentStationName != "Internet Radio"),
+                            visible = !showFullScreenPlayer && (nowPlaying != null || currentStationName != "Internet Radio"),
                             enter = slideInVertically(
                                 animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
                                 initialOffsetY = { it }
@@ -524,15 +486,8 @@ fun MainScreen(
                             ) + fadeOut(animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing)),
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .graphicsLayer {
-                                    val alphaVal = if (screenHeightPx > 0f) {
-                                        (dragOffsetY.value / screenHeightPx).coerceIn(0f, 1f)
-                                    } else {
-                                        1f
-                                    }
-                                    alpha = alphaVal
-                                    translationY = (1f - alphaVal) * barHeightPx
-                                }
+                                .padding(horizontal = 8.dp)
+                                .padding(bottom = 8.dp)
                         ) {
                             NowPlayingBar(
                                 stationName = currentStationName,
@@ -545,40 +500,11 @@ fun MainScreen(
                                 isPlaying = isPlaying,
                                 isPreparing = isPreparing,
                                 onTogglePlayPause = { viewModel.togglePlayPause() },
-                                onBarClick = {
-                                    coroutineScope.launch {
-                                        dragOffsetY.snapTo(screenHeightPx)
-                                        isDraggingPlayer = true
-                                        showFullScreenPlayer = true
-                                        dragOffsetY.animateTo(0f, animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing))
-                                        isDraggingPlayer = false
-                                    }
-                                },
+                                onBarClick = { showFullScreenPlayer = true },
                                 dominantColor = dominantColor,
                                 onDominantColorChange = { dominantColor = it },
                                 sharedTransitionScope = this@SharedTransitionLayout,
-                                animatedVisibilityScope = this@AnimatedVisibility,
-                                onVerticalDrag = { dragAmount ->
-                                    isDraggingPlayer = true
-                                    showFullScreenPlayer = true
-                                    coroutineScope.launch {
-                                        val target = (dragOffsetY.value + dragAmount).coerceIn(0f, screenHeightPx)
-                                        dragOffsetY.snapTo(target)
-                                    }
-                                },
-                                onDragEnd = { totalDrag ->
-                                    isDraggingPlayer = true
-                                    coroutineScope.launch {
-                                        if (dragOffsetY.value < screenHeightPx * 0.85f) {
-                                            dragOffsetY.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
-                                            showFullScreenPlayer = true
-                                        } else {
-                                            dragOffsetY.animateTo(screenHeightPx, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
-                                            showFullScreenPlayer = false
-                                        }
-                                        isDraggingPlayer = false
-                                    }
-                                }
+                                animatedVisibilityScope = this@AnimatedVisibility
                             )
                         }
                     }
@@ -703,77 +629,49 @@ fun MainScreen(
         }
 
         // Full-Screen overlay
-        val isPlayerSheetActive = (showFullScreenPlayer || isDraggingPlayer || dragOffsetY.value < screenHeightPx) && nowPlaying != null
         AnimatedVisibility(
-            visible = isPlayerSheetActive,
-            enter = fadeIn(animationSpec = tween(durationMillis = 150)),
-            exit = fadeOut(animationSpec = tween(durationMillis = 150)),
+            visible = showFullScreenPlayer && nowPlaying != null,
+            enter = slideInVertically(
+                animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
+                initialOffsetY = { it }
+            ) + fadeIn(animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing)),
+            exit = slideOutVertically(
+                animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
+                targetOffsetY = { it }
+            ) + fadeOut(animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing)),
             modifier = Modifier.fillMaxSize()
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .offset { IntOffset(0, dragOffsetY.value.toInt()) }
-            ) {
-                FullScreenPlayer(
-                    stationName = currentStationName,
-                    title = currentTitle,
-                    artist = currentArtist,
-                    bitrate = streamMetadata?.bitrate,
-                    codec = streamMetadata?.codec,
-                    imageUrl = currentArtworkUrl,
-                    isPlaying = isPlaying,
-                    isPreparing = isPreparing,
-                    isFavorited = isCurrentStationFavorited,
-                    songHistory = historyList,
-                    onClearHistory = { viewModel.clearHistory() },
-                    onPlayPauseToggle = { viewModel.togglePlayPause() },
-                    onFavoriteToggle = { viewModel.toggleFavoriteCurrent() },
-                    onClose = {
-                        coroutineScope.launch {
-                            isDraggingPlayer = true
-                            dragOffsetY.animateTo(screenHeightPx, animationSpec = tween(400, easing = FastOutSlowInEasing))
-                            showFullScreenPlayer = false
-                            isDraggingPlayer = false
-                        }
-                    },
-                    onSkipPrevious = { viewModel.skipPrevious() },
-                    onSkipNext = { viewModel.skipNext() },
-                    dominantColor = dominantColor,
-                    onDominantColorChange = { dominantColor = it },
-                    isTimerActive = isTimerActive,
-                    remainingMinutes = remainingMinutes,
-                    onStartSleepTimer = { viewModel.startSleepTimer(it) },
-                    onCancelSleepTimer = { viewModel.cancelSleepTimer() },
-                    currentLyrics = currentLyrics,
-                    isSongLiked = isSongLiked,
-                    onToggleLike = { artist, title -> viewModel.toggleSongLike(artist, title, currentArtworkUrl) },
-                    likedSongs = likedSongs,
-                    onToggleHistoryLike = { historyItemId -> viewModel.toggleHistoryItemLikeStatus(historyItemId) },
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@AnimatedVisibility,
-                    onVerticalDrag = { dragAmount ->
-                        isDraggingPlayer = true
-                        coroutineScope.launch {
-                            val target = (dragOffsetY.value + dragAmount).coerceIn(0f, screenHeightPx)
-                            dragOffsetY.snapTo(target)
-                        }
-                    },
-                    onDragEnd = { totalDrag ->
-                        isDraggingPlayer = true
-                        coroutineScope.launch {
-                            if (dragOffsetY.value > screenHeightPx * 0.15f) {
-                                dragOffsetY.animateTo(screenHeightPx, animationSpec = tween(300, easing = FastOutSlowInEasing))
-                                showFullScreenPlayer = false
-                            } else {
-                                dragOffsetY.animateTo(0f, animationSpec = tween(300, easing = FastOutSlowInEasing))
-                                showFullScreenPlayer = true
-                            }
-                            isDraggingPlayer = false
-                        }
-                    }
-                )
-            }
+            FullScreenPlayer(
+                stationName = currentStationName,
+                title = currentTitle,
+                artist = currentArtist,
+                bitrate = streamMetadata?.bitrate,
+                codec = streamMetadata?.codec,
+                imageUrl = currentArtworkUrl,
+                isPlaying = isPlaying,
+                isPreparing = isPreparing,
+                isFavorited = isCurrentStationFavorited,
+                songHistory = historyList,
+                onClearHistory = { viewModel.clearHistory() },
+                onPlayPauseToggle = { viewModel.togglePlayPause() },
+                onFavoriteToggle = { viewModel.toggleFavoriteCurrent() },
+                onClose = { showFullScreenPlayer = false },
+                onSkipPrevious = { viewModel.skipPrevious() },
+                onSkipNext = { viewModel.skipNext() },
+                dominantColor = dominantColor,
+                onDominantColorChange = { dominantColor = it },
+                isTimerActive = isTimerActive,
+                remainingMinutes = remainingMinutes,
+                onStartSleepTimer = { viewModel.startSleepTimer(it) },
+                onCancelSleepTimer = { viewModel.cancelSleepTimer() },
+                currentLyrics = currentLyrics,
+                isSongLiked = isSongLiked,
+                onToggleLike = { artist, title -> viewModel.toggleSongLike(artist, title, currentArtworkUrl) },
+                likedSongs = likedSongs,
+                onToggleHistoryLike = { historyItemId -> viewModel.toggleHistoryItemLikeStatus(historyItemId) },
+                sharedTransitionScope = this@SharedTransitionLayout,
+                animatedVisibilityScope = this@AnimatedVisibility
+            )
         }
     }
 }

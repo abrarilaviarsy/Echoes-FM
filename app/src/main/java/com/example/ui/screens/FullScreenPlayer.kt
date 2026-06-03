@@ -81,9 +81,7 @@ fun FullScreenPlayer(
     likedSongs: List<com.example.data.model.LikedSong> = emptyList(),
     onToggleHistoryLike: (Long) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    onVerticalDrag: ((Float) -> Unit)? = null,
-    onDragEnd: ((Float) -> Unit)? = null
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     val context = LocalContext.current
     var showHistorySheet by remember { mutableStateOf(false) }
@@ -158,36 +156,12 @@ fun FullScreenPlayer(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(onVerticalDrag, onDragEnd) {
-                    var totalDrag = 0f
-                    detectVerticalDragGestures(
-                        onDragStart = { totalDrag = 0f },
-                        onDragEnd = {
-                            if (onDragEnd != null) {
-                                onDragEnd(totalDrag)
-                            } else {
-                                if (totalDrag > 50f) {
-                                    onClose()
-                                }
-                            }
-                        },
-                        onDragCancel = {
-                            if (onDragEnd != null) {
-                                onDragEnd(0f)
-                            }
-                        },
-                        onVerticalDrag = { change, dragAmount ->
-                            totalDrag += dragAmount
-                            if (onVerticalDrag != null) {
-                                onVerticalDrag(dragAmount)
-                            } else {
-                                if (totalDrag > 50f) {
-                                    onClose()
-                                    totalDrag = 0f
-                                }
-                            }
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { change, dragAmount ->
+                        if (dragAmount > 50) {
+                            onClose()
                         }
-                    )
+                    }
                 }
                 .statusBarsPadding()
                 .navigationBarsPadding()
@@ -653,24 +627,30 @@ fun FullScreenPlayer(
                 }
 
                 // Center Play/Pause button
-                IconButton(
-                    onClick = onPlayPauseToggle,
+                Box(
                     modifier = Modifier
-                        .size(100.dp)
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .clickable { onPlayPauseToggle() }
                         .testTag("player_play_pause_container")
                 ) {
                     if (isPreparing) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(56.dp),
-                            strokeWidth = 4.dp,
-                            color = Color.White
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center),
+                            strokeWidth = 3.dp,
+                            color = Color.Black
                         )
                     } else {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = "Play or Pause",
-                            tint = Color.White,
-                            modifier = Modifier.size(76.dp)
+                            tint = Color.Black,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center)
                         )
                     }
                 }

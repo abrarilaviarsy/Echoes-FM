@@ -60,9 +60,7 @@ fun NowPlayingBar(
     dominantColor: Color = Color(0xFF121212),
     onDominantColorChange: (Color) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    onVerticalDrag: ((Float) -> Unit)? = null,
-    onDragEnd: ((Float) -> Unit)? = null
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     val artworkData: Any? = if (!imageUrl.isNullOrBlank()) imageUrl else nowPlaying?.mediaMetadata?.artworkUri
     val animatedBgColor by animateColorAsState(targetValue = dominantColor, animationSpec = tween(1000), label = "MiniPlayerBg")
@@ -85,34 +83,22 @@ fun NowPlayingBar(
         modifier = modifier
             .fillMaxWidth()
             .height(72.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(finalCardBgColor)
-            .pointerInput(onVerticalDrag, onDragEnd) {
+            .pointerInput(Unit) {
                 var totalDrag = 0f
                 detectVerticalDragGestures(
                     onDragStart = { totalDrag = 0f },
                     onDragEnd = {
-                        if (onDragEnd != null) {
-                            onDragEnd(totalDrag)
-                        } else {
-                            if (totalDrag < -50f) {
-                                onBarClick()
-                            }
-                        }
-                    },
-                    onDragCancel = {
-                        if (onDragEnd != null) {
-                            onDragEnd(0f)
+                        if (totalDrag < -50f) {
+                            onBarClick()
                         }
                     },
                     onVerticalDrag = { change, dragAmount ->
                         totalDrag += dragAmount
-                        if (onVerticalDrag != null) {
-                            onVerticalDrag(dragAmount)
-                        } else {
-                            if (totalDrag < -50f) {
-                                onBarClick()
-                                totalDrag = 0f
-                            }
+                        if (totalDrag < -50f) {
+                            onBarClick()
+                            totalDrag = 0f
                         }
                     }
                 )
