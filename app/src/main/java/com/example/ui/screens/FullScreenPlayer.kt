@@ -81,7 +81,9 @@ fun FullScreenPlayer(
     likedSongs: List<com.example.data.model.LikedSong> = emptyList(),
     onToggleHistoryLike: (Long) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    onVerticalDrag: ((Float) -> Unit)? = null,
+    onDragEnd: ((Float) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var showHistorySheet by remember { mutableStateOf(false) }
@@ -156,12 +158,36 @@ fun FullScreenPlayer(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures { change, dragAmount ->
-                        if (dragAmount > 50) {
-                            onClose()
+                .pointerInput(onVerticalDrag, onDragEnd) {
+                    var totalDrag = 0f
+                    detectVerticalDragGestures(
+                        onDragStart = { totalDrag = 0f },
+                        onDragEnd = {
+                            if (onDragEnd != null) {
+                                onDragEnd(totalDrag)
+                            } else {
+                                if (totalDrag > 50f) {
+                                    onClose()
+                                }
+                            }
+                        },
+                        onDragCancel = {
+                            if (onDragEnd != null) {
+                                onDragEnd(0f)
+                            }
+                        },
+                        onVerticalDrag = { change, dragAmount ->
+                            totalDrag += dragAmount
+                            if (onVerticalDrag != null) {
+                                onVerticalDrag(dragAmount)
+                            } else {
+                                if (totalDrag > 50f) {
+                                    onClose()
+                                    totalDrag = 0f
+                                }
+                            }
                         }
-                    }
+                    )
                 }
                 .statusBarsPadding()
                 .navigationBarsPadding()
@@ -725,27 +751,29 @@ fun FullScreenPlayer(
                         .testTag("sleep_timer_button")
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Bedtime,
-                            contentDescription = "Sleep Timer",
-                            tint = if (isTimerActive) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
-                            modifier = Modifier.size(24.dp)
-                        )
                         if (isTimerActive && remainingMinutes > 0) {
                             Box(
+                                contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 6.dp, y = (-6).dp)
-                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
                             ) {
                                 Text(
                                     text = "${remainingMinutes}m",
-                                    fontSize = 9.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    maxLines = 1
                                 )
                             }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Bedtime,
+                                contentDescription = "Sleep Timer",
+                                tint = Color.White.copy(alpha = 0.6f),
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
@@ -1347,7 +1375,7 @@ fun ExternalSearchDialog(searchQuery: String, onDismiss: () -> Unit) {
                             )
                         }
                         Text(
-                            text = "Search",
+                            text = "Open",
                             fontWeight = FontWeight.Bold,
                             color = Color.White.copy(alpha = 0.8f),
                             fontSize = 15.sp
@@ -1395,7 +1423,7 @@ fun ExternalSearchDialog(searchQuery: String, onDismiss: () -> Unit) {
                             )
                         }
                         Text(
-                            text = "Search",
+                            text = "Open",
                             fontWeight = FontWeight.Bold,
                             color = Color.White.copy(alpha = 0.8f),
                             fontSize = 15.sp

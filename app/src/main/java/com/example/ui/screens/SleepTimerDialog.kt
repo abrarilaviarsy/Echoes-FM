@@ -37,25 +37,25 @@ fun SleepTimerDialog(
                     )
                 } else {
                     Text(
-                        text = "Configure ExoPlayer to automatically pause playback after the duration below finishes:",
+                        text = "Playback will automatically pause after the selected duration.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    val minutesList = listOf(15, 30, 45, 60, 90)
-                    minutesList.forEach { min ->
-                        FilterChip(
-                            selected = selectedMinutes == min,
-                            onClick = { selectedMinutes = min },
-                            label = { Text("$min m") },
-                            modifier = Modifier.testTag("timer_chip_$min")
-                        )
-                    }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Duration: $selectedMinutes minutes",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Slider(
+                        value = selectedMinutes.toFloat(),
+                        onValueChange = { selectedMinutes = it.toInt() },
+                        valueRange = 1f..120f,
+                        modifier = Modifier.fillMaxWidth().testTag("timer_slider")
+                    )
                 }
             }
         },
