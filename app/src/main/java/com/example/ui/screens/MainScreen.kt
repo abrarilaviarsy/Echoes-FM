@@ -365,6 +365,7 @@ fun MainScreen(
                                         val stations by radioBrowserViewModel.radioBrowserStations.collectAsStateWithLifecycle()
                                         val isLoading by radioBrowserViewModel.isLoadingRadioBrowser.collectAsStateWithLifecycle()
                                         val radioBrowserSearchQuery by radioBrowserViewModel.searchQuery.collectAsStateWithLifecycle()
+                                        val currentOrder by radioBrowserViewModel.currentOrder.collectAsStateWithLifecycle()
                                         val favs by viewModel.favorites.collectAsStateWithLifecycle()
                                         var showCountrySheetLocal by remember { mutableStateOf(false) }
 
@@ -390,7 +391,9 @@ fun MainScreen(
                                             onBrowseCountriesClick = {
                                                 radioBrowserViewModel.fetchCountries()
                                                 showCountrySheetLocal = true
-                                            }
+                                            },
+                                            currentOrder = currentOrder,
+                                            onOrderChanged = { order -> radioBrowserViewModel.searchRadioBrowser(radioBrowserSearchQuery, order) }
                                         )
 
                                         if (showCountrySheetLocal) {

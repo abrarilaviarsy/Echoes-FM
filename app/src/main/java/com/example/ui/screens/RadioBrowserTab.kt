@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +31,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -48,11 +50,14 @@ fun RadioBrowserTab(
     onPlay: (com.example.data.model.RadioBrowserStation) -> Unit,
     onToggleFavorite: (FavoriteStation) -> Unit,
     onBrowseCountriesClick: () -> Unit,
+    currentOrder: String = "clickcount",
+    onOrderChanged: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var rawText by remember { mutableStateOf(searchQuery) }
     var selectedTag by remember { mutableStateOf<String?>(null) }
     val keyboardController = LocalSoftwareKeyboardController.current
+    var sortMenuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(searchQuery) {
         rawText = searchQuery
@@ -100,6 +105,76 @@ fun RadioBrowserTab(
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Box {
+                IconButton(
+                    onClick = { sortMenuExpanded = true },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("sort_stations_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Sort,
+                        contentDescription = "Sort Stations",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = sortMenuExpanded,
+                    onDismissRequest = { sortMenuExpanded = false },
+                    modifier = Modifier
+                        .width(220.dp)
+                        .background(Color(0xFF1C1C1E))
+                        .testTag("sort_stations_dropdown")
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Sort by Name",
+                                color = if (currentOrder == "name") MaterialTheme.colorScheme.primary else Color.White,
+                                fontWeight = if (currentOrder == "name") FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            sortMenuExpanded = false
+                            onOrderChanged("name")
+                        },
+                        modifier = Modifier.testTag("sort_by_name_option")
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Sort by Popularity (Votes)",
+                                color = if (currentOrder == "votes") MaterialTheme.colorScheme.primary else Color.White,
+                                fontWeight = if (currentOrder == "votes") FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            sortMenuExpanded = false
+                            onOrderChanged("votes")
+                        },
+                        modifier = Modifier.testTag("sort_by_votes_option")
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Sort by Trending (Clicks)",
+                                color = if (currentOrder == "clickcount") MaterialTheme.colorScheme.primary else Color.White,
+                                fontWeight = if (currentOrder == "clickcount") FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            sortMenuExpanded = false
+                            onOrderChanged("clickcount")
+                        },
+                        modifier = Modifier.testTag("sort_by_clicks_option")
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.width(8.dp))
 
@@ -186,30 +261,31 @@ fun RadioBrowserTab(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (stations.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.MusicNote,
-                        contentDescription = "No Stations",
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "No stations found",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Try typing something else or check your network.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.MusicNote,
+                    contentDescription = "No Stations",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "No stations found",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "Try typing something else or check your network.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         } else {
             LazyColumn(

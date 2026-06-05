@@ -16,7 +16,9 @@ interface RadioBrowserApi {
         @Query("name") name: String? = null,
         @Query("countrycode") countryCode: String? = null,
         @Query("limit") limit: Int = 100,
-        @Query("hidebroken") hideBroken: Boolean = true
+        @Query("hidebroken") hideBroken: Boolean = true,
+        @Query("order") order: String? = null,
+        @Query("reverse") reverse: Boolean? = null
     ): List<RadioBrowserStation>
 
     @GET("json/stations/search")

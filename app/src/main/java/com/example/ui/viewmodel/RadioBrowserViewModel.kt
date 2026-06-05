@@ -54,6 +54,9 @@ class RadioBrowserViewModel(application: Application) : AndroidViewModel(applica
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _currentOrder = MutableStateFlow<String>("clickcount")
+    val currentOrder: StateFlow<String> = _currentOrder.asStateFlow()
+
     private val _countries = MutableStateFlow<List<com.example.data.model.CountryDto>>(emptyList())
     val countries: StateFlow<List<com.example.data.model.CountryDto>> = _countries.asStateFlow()
 
@@ -65,11 +68,15 @@ class RadioBrowserViewModel(application: Application) : AndroidViewModel(applica
         searchRadioBrowser("")
     }
 
-    fun searchRadioBrowser(query: String) {
+    fun searchRadioBrowser(query: String, order: String? = null) {
         _searchQuery.value = query
+        if (order != null) {
+            _currentOrder.value = order
+        }
+        val orderParam = order ?: _currentOrder.value
         viewModelScope.launch {
             _isLoadingRadioBrowser.value = true
-            _radioBrowserStations.value = repository.searchStations(query)
+            _radioBrowserStations.value = repository.searchStations(query, order = orderParam)
             _isLoadingRadioBrowser.value = false
         }
     }

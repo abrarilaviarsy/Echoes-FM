@@ -115,16 +115,21 @@ class RadioRepository(
         }
     }
 
-    suspend fun searchStations(query: String, countryCode: String? = null): List<RadioBrowserStation> = withContext(Dispatchers.IO) {
+    suspend fun searchStations(query: String, countryCode: String? = null, order: String? = null): List<RadioBrowserStation> = withContext(Dispatchers.IO) {
         try {
+            val reverseValue = if (order != null && order != "name") true else null
             if (query.isBlank()) {
                 if (countryCode != null) {
-                    radioBrowserApi.searchStations(countryCode = countryCode, limit = 100)
+                    radioBrowserApi.searchStations(countryCode = countryCode, limit = 100, order = order, reverse = reverseValue)
                 } else {
-                    getTopStations()
+                    if (order != null) {
+                        radioBrowserApi.searchStations(limit = 100, order = order, reverse = reverseValue)
+                    } else {
+                        getTopStations()
+                    }
                 }
             } else {
-                radioBrowserApi.searchStations(name = query, countryCode = countryCode, limit = 100)
+                radioBrowserApi.searchStations(name = query, countryCode = countryCode, limit = 100, order = order, reverse = reverseValue)
             }
         } catch (e: Exception) {
             emptyList()
